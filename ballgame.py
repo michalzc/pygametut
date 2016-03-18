@@ -13,6 +13,8 @@ def main(argv):
     screen      = pygame.display.set_mode(size)
     ball_img, _ = load_image("ball.gif")
     ball        = entities.Ball(ball_img, size)
+    info        = entities.GameInfo(ball)
+    sprites     = pygame.sprite.Group(ball, info)
 
     while 1:
         for event in pygame.event.get():
@@ -22,11 +24,12 @@ def main(argv):
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 ball.bum(event.pos)
 
-        ball.update(clock.tick())
+        sprites.update(clock.tick(), clock.get_fps())
 
 
         screen.fill(black)
-        screen.blit(ball.image, ball.rect)
+        sprites.draw(screen)
+        # screen.blit(ball.image, ball.rect)
         pygame.display.flip()
 
 

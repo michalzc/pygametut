@@ -3,8 +3,64 @@ import random
 
 MIN_START_SPEED = 100
 MAX_START_SPEED = 200
+WHITE = 255, 255, 255
 
 FADE_RANGE = 500
+
+class GameInfo(pygame.sprite.Sprite):
+    def __init__(self, ball):
+        pygame.sprite.Sprite.__init__(self)
+        self.font = pygame.font.SysFont("Verdana", 12, False)
+        self.fps = None
+        self.ball = ball
+
+        self.render_status()
+        self.last_tick = 0
+
+    def render_status(self):
+        infos = [
+            self.render_fps(),
+            self.render_speed(),
+            self.render_last_force()
+        ]
+
+        line_height = self.font.get_linesize()
+        width = max([e.get_rect().width for e in infos])
+        height = line_height * len(infos)
+        image = pygame.surface.Surface((width, height)).convert()
+        idx = 0
+        for info in infos:
+            rect = info.get_rect()
+            rect.top = idx
+            image.blit(info, rect)
+            idx += line_height
+        self.image = image
+        self.rect = image.get_rect()
+
+
+    def render_speed(self):
+        txt = "Speed: (%.0f, %.0f)" % tuple(self.ball.speed)
+        return self.font.render(txt, True, WHITE)
+
+    def render_fps(self):
+        fps = self.fps and ("%.0f" % self.fps) or "-"
+        txt = "Fps: %s" % fps
+        return self.font.render(txt, True, WHITE)
+
+    def render_last_force(self):
+        force = self.ball.last_force and ("%.0f, %.0f" % tuple(self.ball.last_force)) or "-, -"
+        txt = "Last force: %s" % force
+        return self.font.render(txt, True, WHITE)
+
+
+    def update(self, tick, fps):
+        self.last_tick += tick
+        if self.last_tick > 300:
+            self.last_tick = 0
+            self.render_status()
+            self.fps = fps
+
+
 
 class Ball(pygame.sprite.Sprite):
 
@@ -15,6 +71,7 @@ class Ball(pygame.sprite.Sprite):
         self.board_width, self.board_height = board_size
         self._init_position(start_position)
         self._init_speed()
+        self.last_force = None
 
     def board_size(self):
         return (self.board_width, self.board_height)
@@ -37,7 +94,7 @@ class Ball(pygame.sprite.Sprite):
 
         self.speed = pygame.math.Vector2(x, y)
 
-    def update(self, tick):
+    def update(self, tick, *args):
         f = tick / 1000
         x, y = self.position
         xs, ys = self.speed
@@ -69,3 +126,4 @@ class Ball(pygame.sprite.Sprite):
         if bum_force > 0:
             bum_vec = bum_vec.normalize() * bum_force
             self.speed += bum_vec
+            self.last_force = bum_vec
